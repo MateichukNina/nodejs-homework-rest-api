@@ -76,7 +76,7 @@ const update = async (req, res, next) => {
     name,
     email,
     phone,
-  });
+  }, {new: true});
   if (updatedContact) {
     res.status(200).json(updatedContact);
   } else {
@@ -86,20 +86,16 @@ const update = async (req, res, next) => {
 
 const updateStatus = async (req, res) => {
   const id = req.params.id;
-  const { favorite } = req.body;
-
-  if (!favorite) {
-    return res.status(400).json({ message: "Missing field favorite" });
-  }
+ 
 
   if (!ObjectId.isValid(id)) {
     return res.status(404).json({ message: "Contact not found" });
   }
 
-  const updateStatusContact = await Contact.findByIdAndUpdate(id, { favorite });
+  const updateStatusContact = await Contact.findByIdAndUpdate(id, req.body, {new: true});
 
   if (updateStatusContact) {
-    return res.status(200).json(updateStatusContact);
+    res.status(200).json(updateStatusContact);
   } else {
     return res.status(400).json({ message: "Contact not found" });
   }
