@@ -1,24 +1,31 @@
 const { User } = require("../models/user");
-const bcrypt = require("bcrypt")
+const bcrypt = require("bcrypt");
+const jwt = require('jsonwebtoken');
+require("dotenv").config();
+
+const {SECRET_KEY} = process.env;
 
 const { ctrlWrapper } = require("../helpers");
 
 const register = async (req, res, next) => {
-  const { password, email, subscription, name } = req.body;
+  const { password, email } = req.body;
 
   try {
     const user = await User.findOne({ email }).exec();
 
-    if (user !== null) res.status(409).send({ message: 'Email in use' });
+    if (!user) res.status(409).send({ message: "Email in use" });
 
-    const passwordHash = bcrypt.hashSync(password, 10);
+    const createHashPassword = await bcrypt.hashSync(password, 10);
 
-    await User.create({ password: passwordHash, email, subscription });
+    const newUser = await User.create({
+      ...req.body,
+      password: createHashPassword,
+    });
 
     res.status(201).send({
-      user: {name,
-        email,
-        subscription,
+      user: {
+        email: newUser.email,
+        subscription: newUser.subscription,
       },
     });
   } catch (error) {
@@ -26,17 +33,32 @@ const register = async (req, res, next) => {
   }
 };
 
+const login = async (res, req) => {
+  const { email, password } = req.body;
 
+  const user = await User.findOne({ email }).exec();
 
-const login = async (res, req)=>{
-// const {email, password} = req.body;
+  if (!user) res.status(401).send({ message: "Email or password is wrong" });
 
-// const user = await User.findOne({ email }).exec();
+  const isLogin = await bcrypt.compare(password, user.password);
 
+  if (!isLogin) res.status(401).send({ message: "Email or password is wrong" });
 
-}
+  const payload = {
+    id: user._id,
+  };
+
+  const token = jwt.sign(payload, SECRET_KEY, {expiresIn: "23h"});
+
+  res
+    .status(200)
+    .json({
+      token,
+      user: { email: user.email, subscription: user.subscription },
+    });
+};
 
 module.exports = {
   register: ctrlWrapper(register),
-  login: ctrlWrapper(login)
+  login: ctrlWrapper(login),
 };
