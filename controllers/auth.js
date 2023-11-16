@@ -13,7 +13,7 @@ const register = async (req, res, next) => {
   try {
     const user = await User.findOne({ email }).exec();
 
-    if (!user) res.status(409).send({ message: "Email in use" });
+    if (user) res.status(409).send({ message: "Email in use" });
 
     const createHashPassword = await bcrypt.hashSync(password, 10);
 
@@ -33,29 +33,32 @@ const register = async (req, res, next) => {
   }
 };
 
-const login = async (res, req) => {
-  const { email, password } = req.body;
+const login = async (req, res) => {
+  try {
+    const { email, password } = req.body; 
 
-  const user = await User.findOne({ email }).exec();
+    const user = await User.findOne({ email }).exec();
 
-  if (!user) res.status(401).send({ message: "Email or password is wrong" });
+    if (!user) return res.status(401).send({ message: "Email or password is wrong" });
 
-  const isLogin = await bcrypt.compare(password, user.password);
+    const isLogin = await bcrypt.compare(password, user.password);
 
-  if (!isLogin) res.status(401).send({ message: "Email or password is wrong" });
+    if (!isLogin) return res.status(401).send({ message: "Email or password is wrong" });
 
-  const payload = {
-    id: user._id,
-  };
+    const payload = {
+      id: user._id,
+    };
 
-  const token = jwt.sign(payload, SECRET_KEY, {expiresIn: "23h"});
+    const token = jwt.sign(payload, SECRET_KEY, { expiresIn: "23h" });
 
-  res
-    .status(200)
-    .json({
+    res.status(200).json({
       token,
       user: { email: user.email, subscription: user.subscription },
     });
+  } catch (error) {
+    console.error(error); 
+    res.status(500).send({ message: "Internal Server Error" });
+  }
 };
 
 module.exports = {

@@ -28,9 +28,9 @@ const getById = async (req, res, next) => {
 const add = async (req, res) => {
   const { name, email, phone } = req.body;
 
-  if (!name || !email || !phone) {
-    return res.status(400).json({ message: "missing required name field" });
-  }
+  // if (!name || !email || !phone) {
+  //   return res.status(400).json({ message: "missing required name field" });
+  // }
 
   const { error } = schema.validate(req.body);
 

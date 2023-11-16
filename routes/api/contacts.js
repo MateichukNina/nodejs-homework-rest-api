@@ -1,17 +1,19 @@
 const express = require('express');
 const ctrl = require('../../controllers/contacts');
-const router = express.Router()
+const router = express.Router();
+const authenticate = require("../../helpers/autorization");
+const  isValidId  = require('../../helpers/isValidId');
 
 
-router.get('/', ctrl.getAll)
+router.get('/', authenticate, ctrl.getAll)
 
-router.get('/:id', ctrl.getById)
+router.get('/:id', isValidId, ctrl.getById)
 
-router.post('/', ctrl.add)
+router.post('/', authenticate, ctrl.add)
 
-router.delete('/:id', ctrl.remove)
+router.delete('/:id', isValidId, ctrl.remove)
 
-router.put('/:id', ctrl.update)
+router.put('/:id', isValidId, ctrl.update)
 
 router.patch('/:id/favorite', ctrl.updateStatus)
 
