@@ -11,7 +11,7 @@ router.get('/:id', isValidId, ctrl.getById)
 
 router.post('/', authenticate, ctrl.add)
 
-router.delete('/:id', isValidId, ctrl.remove)
+router.delete('/:id',authenticate, isValidId, ctrl.remove)
 
 router.put('/:id', isValidId, ctrl.update)
 
