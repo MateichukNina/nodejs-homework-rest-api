@@ -7,14 +7,14 @@ const  isValidId  = require('../../helpers/isValidId');
 
 router.get('/', authenticate, ctrl.getAll)
 
-router.get('/:id', isValidId, ctrl.getById)
+router.get('/:id', authenticate, isValidId, ctrl.getById)
 
 router.post('/', authenticate, ctrl.add)
 
 router.delete('/:id',authenticate, isValidId, ctrl.remove)
 
-router.put('/:id', isValidId, ctrl.update)
+router.put('/:id', authenticate, isValidId, ctrl.update)
 
-router.patch('/:id/favorite', ctrl.updateStatus)
+router.patch('/:id/favorite', authenticate, ctrl.updateStatus)
 
 module.exports = router

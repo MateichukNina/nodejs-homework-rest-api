@@ -25,6 +25,10 @@ const getById = async (req, res, next) => {
   }
   const contact = await Contact.findById(id);
 
+  if (contact.owner.toString() !== req.user._id.toString()) {
+    return res.status(403).json({ message: "You are not the owner of this contact" });
+  };
+
   res.status(200).json(contact);
 };
 
@@ -58,6 +62,10 @@ const remove = async (req, res) => {
 
   const removedContact = await Contact.findByIdAndDelete(id);
 
+  if (removedContact.owner.toString() !== req.user._id.toString()) {
+    return res.status(403).json({ message: "You are not the owner of this contact" });
+  }
+
   if (removedContact) {
     return res.status(200).json({ message: "Contact deleted" });
   } else {
@@ -81,6 +89,11 @@ const update = async (req, res, next) => {
     email,
     phone,
   }, {new: true});
+
+  if (updatedContact.owner.toString() !== req.user._id.toString()) {
+    return res.status(403).json({ message: "You are not the owner of this contact" });
+  }
+
   if (updatedContact) {
     res.status(200).json(updatedContact);
   } else {
