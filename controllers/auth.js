@@ -2,6 +2,7 @@ const { User } = require("../models/user");
 const bcrypt = require("bcrypt");
 const jwt = require('jsonwebtoken');
 require("dotenv").config();
+const { schemas } = require("../models/user");
 
 const {SECRET_KEY} = process.env;
 
@@ -9,9 +10,18 @@ const { ctrlWrapper } = require("../helpers");
 
 const register = async (req, res, next) => {
   const { password, email } = req.body;
+ 
 
   try {
     const user = await User.findOne({ email }).exec();
+     
+  const { error } = schemas.registerSchema.validate(req.body);
+
+  if (error) {
+    return res.status(400).json({ message: error.details[0].message });
+  }
+
+  
 
     if (user) res.status(409).send({ message: "Email in use" });
 
@@ -29,13 +39,23 @@ const register = async (req, res, next) => {
       },
     });
   } catch (error) {
-    next(error);
+    next({ status: 400, message: error.details[0].message });
   }
 };
 
-const login = async (req, res) => {
+const login = async (req, res, next) => {
   try {
-    const { email, password } = req.body; 
+    const { email, password } = req.body;
+    
+    const { error } = schemas.loginSchema.validate(req.body);
+
+  if (error) {
+    return res.status(400).json({ message: error.details[0].message });
+  }
+    
+
+    // if (!email || !password) 
+    // return res.status(400).json({ message: "missing required fields" });
 
     const user = await User.findOne({ email }).exec();
 
@@ -49,6 +69,7 @@ const login = async (req, res) => {
       id: user._id,
     };
 
+   
     const token = jwt.sign(payload, SECRET_KEY, { expiresIn: "23h" });
     await User.findByIdAndUpdate(user._id, {token});
 
@@ -57,8 +78,8 @@ const login = async (req, res) => {
       user: { email: user.email, subscription: user.subscription },
     });
   } catch (error) {
-    console.error(error); 
-    res.status(500).send({ message: "Internal Server Error" });
+    next({ status: 400, message: error.details[0].message });
+  
   }
 };
 

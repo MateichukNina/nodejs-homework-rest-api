@@ -7,7 +7,9 @@
  const authValidator = schema => (req, res, next) => {
   const { error } = schema.validate(req.body);
 
-  if (error) next((400, error.message));
+  if (error) {
+    return next({ status: 400, message: error.details[0].message });
+  }
 
   return next();
 };

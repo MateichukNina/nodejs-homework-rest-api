@@ -41,11 +41,8 @@ const loginSchema = Joi.object({
   password: Joi.string().min(6).required(),
 });
 
-const schemas = {
-  registerSchema,
-  loginSchema,
-};
+
 
 const User = mongoose.model("User", userSchema);
 
-module.exports = { User, schemas,};
+module.exports = { User, registerSchema, loginSchema};

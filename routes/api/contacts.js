@@ -15,6 +15,6 @@ router.delete('/:id',authenticate, isValidId, ctrl.remove)
 
 router.put('/:id', authenticate, isValidId, ctrl.update)
 
-router.patch('/:id/favorite', authenticate, ctrl.updateStatus)
+router.patch('/:id/favorite', authenticate, isValidId, ctrl.updateStatus)
 
-module.exports = router
+module.exports = router;

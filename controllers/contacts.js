@@ -11,9 +11,11 @@ const schema = Joi.object({
 
 const getAll = async (req, res) => {
   const {_id : owner} = req.user;
-  const {page = 1, limit = 10} = req.query;
+  const {page = 1, limit = 10, } = req.query;
   const skip = (page - 1)*limit;
-  const contacts = await Contact.find({owner}, '-createdAt -updatedAt', {skip, limit}).populate("owner", "name email");
+
+
+  const contacts = await Contact.find( {owner}, '-createdAt -updatedAt', {skip, limit}).populate("owner", "email");
   res.status(200).json(contacts);
 };
 
@@ -34,11 +36,7 @@ const getById = async (req, res, next) => {
 
 const add = async (req, res) => {
   const { name, email, phone } = req.body;
-  // const {_id: owner} = req.user;
-
-  if (!name || !email || !phone) {
-     return res.status(400).json({ message: "missing required name field" });
-   }
+  const {_id: owner} = req.user;
 
   const { error } = schema.validate(req.body);
 
@@ -46,7 +44,11 @@ const add = async (req, res) => {
     return res.status(400).json({ message: error.details[0].message });
   }
 
-  const newContact = await Contact.create({ ...req.body, owner: req.user._id });
+  const newContact = await Contact.create({ ...req.body, owner});
+
+  if (!name || !email || !phone) {
+    return res.status(400).json({ message: "missing required name field" });
+  }
 
   const addedContact = await newContact.save();
 
