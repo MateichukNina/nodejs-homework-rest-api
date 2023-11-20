@@ -2,7 +2,7 @@ const { User } = require("../models/user");
 const bcrypt = require("bcrypt");
 const jwt = require('jsonwebtoken');
 require("dotenv").config();
-const { schemas } = require("../models/user");
+const {registerSchema, loginSchema} = require("../models/user");
 
 const {SECRET_KEY} = process.env;
 
@@ -15,9 +15,10 @@ const register = async (req, res, next) => {
   try {
     const user = await User.findOne({ email }).exec();
      
-  const { error } = schemas.registerSchema.validate(req.body);
+  const { error } = registerSchema.validate(req.body);
 
   if (error) {
+    console.log('Validation Error:', error);
     return res.status(400).json({ message: error.details[0].message });
   }
 
@@ -39,6 +40,7 @@ const register = async (req, res, next) => {
       },
     });
   } catch (error) {
+    console.log('Unexpected Error:', error);
     next({ status: 400, message: error.details[0].message });
   }
 };
@@ -47,7 +49,7 @@ const login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
     
-    const { error } = schemas.loginSchema.validate(req.body);
+    const { error } = loginSchema.validate(req.body);
 
   if (error) {
     return res.status(400).json({ message: error.details[0].message });
