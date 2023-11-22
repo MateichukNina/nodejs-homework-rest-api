@@ -101,9 +101,14 @@ const logOut = async(req, res) =>{
   res.status(204).json({message: "No content"})
 }
 
+const uploadAvatar = async (req, res, next) =>{
+  res.send("Upload avatar!");
+};
+
 module.exports = {
   register: ctrlWrapper(register),
   login: ctrlWrapper(login),
   getCurrent: ctrlWrapper(getCurrent),
-  logOut: ctrlWrapper(logOut)
+  logOut: ctrlWrapper(logOut),
+  uploadAvatar: ctrlWrapper(uploadAvatar)
 };
