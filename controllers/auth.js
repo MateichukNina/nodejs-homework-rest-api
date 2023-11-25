@@ -5,6 +5,8 @@ require("dotenv").config();
 const { registerSchema, loginSchema } = require("../models/user");
 const fs = require("fs/promises");
 const path = require("path");
+const gravatar = require("gravatar");
+const Jimp = require("jimp");
 
 const { SECRET_KEY } = process.env;
 
@@ -25,17 +27,25 @@ const register = async (req, res, next) => {
 
     if (user) res.status(409).send({ message: "Email in use" });
 
+    const avatarURL = gravatar.url(email);
+
     const createHashPassword = await bcrypt.hashSync(password, 10);
 
     const newUser = await User.create({
       ...req.body,
       password: createHashPassword,
+      avatarURL,
+    });
+
+    await Jimp.read(avatarURL).then((image) => {
+      return image.resize(250, 250).quality(90).write(avatarURL);
     });
 
     res.status(201).send({
       user: {
         email: newUser.email,
         subscription: newUser.subscription,
+        avatarURL: newUser.avatarURL,
       },
     });
   } catch (error) {
@@ -106,9 +116,14 @@ const uploadAvatar = async (req, res, next) => {
       path.join(__dirname, "..", "public/avatars", req.file.filename)
     );
 
+    const imagePath = req.file.path;
+
+    const image = await Jimp.read(imagePath);
+    await image.resize(250, 250).quality(90).writeAsync(imagePath);
+
     const updatedUser = await User.findByIdAndUpdate(
       req.user.id,
-      {avatar: req.file.filename, avatarURL: `${req.file.filename}` },
+      { avatar: req.file.filename, avatarURL: `${req.file.filename}` },
       { new: true }
     ).exec();
     console.log(updatedUser);
@@ -117,7 +132,7 @@ const uploadAvatar = async (req, res, next) => {
       return res.status(404).send({ message: "User not found" });
     }
 
-    res.status(200).send(updatedUser)
+    res.status(200).send(updatedUser);
   } catch (error) {
     next(error);
   }

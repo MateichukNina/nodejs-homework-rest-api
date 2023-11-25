@@ -1,11 +1,12 @@
 const express = require("express");
 const logger = require("morgan");
 const cors = require("cors");
+const path = require("path");
 
 
 const authRouter = require('./routes/api/auth');
 const contactsRouter = require("./routes/api/contacts");
-// const userRouter = require("./routes/api/users")
+
 
 
 const app = express();
@@ -18,7 +19,7 @@ app.use(express.json());
 
 app.use('/users', authRouter)
 app.use("/api/contacts", contactsRouter);
-// app.use("/users/avatar", userRouter)
+app.use("/avatars", express.static(path.join(__dirname, "public", "avatars")))
 
 
 
