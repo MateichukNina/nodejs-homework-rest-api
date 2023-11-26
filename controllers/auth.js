@@ -64,9 +64,6 @@ const login = async (req, res, next) => {
       return res.status(400).json({ message: error.details[0].message });
     }
 
-    // if (!email || !password)
-    // return res.status(400).json({ message: "missing required fields" });
-
     const user = await User.findOne({ email }).exec();
 
     if (!user)
@@ -111,6 +108,11 @@ const logOut = async (req, res) => {
 
 const uploadAvatar = async (req, res, next) => {
   try {
+
+    if (!req.file) {
+      return res.status(400).send({ message: 'No file attached' });
+    }
+
     await fs.rename(
       req.file.path,
       path.join(__dirname, "..", "public/avatars", req.file.filename)
@@ -144,4 +146,5 @@ module.exports = {
   getCurrent: ctrlWrapper(getCurrent),
   logOut: ctrlWrapper(logOut),
   uploadAvatar: ctrlWrapper(uploadAvatar),
+ 
 };
