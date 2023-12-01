@@ -7,10 +7,13 @@ const fs = require("fs/promises");
 const path = require("path");
 const gravatar = require("gravatar");
 const Jimp = require("jimp");
-
+const sendEmail = require("../helpers/sendEmail");
 const { SECRET_KEY } = process.env;
 
 const { ctrlWrapper } = require("../helpers");
+const { v4: uuidv4 } = require("uuid");
+
+// const avatarsDir = path.resolve('public/avatars');
 
 const register = async (req, res, next) => {
   const { password, email } = req.body;
@@ -28,18 +31,29 @@ const register = async (req, res, next) => {
     if (user) res.status(409).send({ message: "Email in use" });
 
     const avatarURL = gravatar.url(email);
+    console.log(avatarURL);
+
+    console.log("Avatar URL:", avatarURL);
 
     const createHashPassword = await bcrypt.hashSync(password, 10);
 
+    const verificationToken = uuidv4();
+
+    await sendEmail(
+      email,
+      "Email verification",
+      `<p>Click <a href="http://localhost:3000/users/verify/${verificationToken}">here</a> to verify your email.</p>`
+    );
     const newUser = await User.create({
       ...req.body,
       password: createHashPassword,
       avatarURL,
+      verificationToken,
     });
 
-    await Jimp.read(avatarURL).then((image) => {
-      return image.resize(250, 250).quality(90).write(avatarURL);
-    });
+    // await Jimp.read(avatarURL).then((image) => {
+    //   return image.resize(250, 250).quality(90).write(avatarURL);
+    // });
 
     res.status(201).send({
       user: {
@@ -74,11 +88,17 @@ const login = async (req, res, next) => {
     if (!isLogin)
       return res.status(401).send({ message: "Email or password is wrong" });
 
+      if (user.verify !== true)
+    return res
+      .status(401)
+      .json({ message: "User is not verifed" });
+
     const payload = {
       id: user._id,
     };
 
     const token = jwt.sign(payload, SECRET_KEY, { expiresIn: "23h" });
+
     await User.findByIdAndUpdate(user._id, { token });
 
     res.status(200).json({
@@ -108,9 +128,8 @@ const logOut = async (req, res) => {
 
 const uploadAvatar = async (req, res, next) => {
   try {
-
     if (!req.file) {
-      return res.status(400).send({ message: 'No file attached' });
+      return res.status(400).send({ message: "No file attached" });
     }
 
     await fs.rename(
@@ -140,11 +159,49 @@ const uploadAvatar = async (req, res, next) => {
   }
 };
 
+const verify = async (req, res, next) => {
+  try {
+    const { verificationToken } = req.params;
+
+    const user = await User.findOne({ verificationToken });
+
+     if (!user) return res.status(404).send({ message: "User not found" });
+
+    await User.findByIdAndUpdate(user._id, {
+      verify: true,
+      verificationToken: null,
+    });
+
+    res.status(200).json({ message: "Verification successful" });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const emailResend = async (req, res) => {
+  const { email } = req.body;
+
+  const user = User.findOne({ email });
+
+  if (!user)
+    return res.status(400).json({ message: "missing required field email" });
+
+  if (user.verify)
+    return res
+      .status(400)
+      .json({ message: "Verification has already been passed" });
+
+  await sendEmail(email, user.verificationToken);
+
+  res.status(200).json({ message: "Verification email sent" });
+};
+
 module.exports = {
   register: ctrlWrapper(register),
   login: ctrlWrapper(login),
   getCurrent: ctrlWrapper(getCurrent),
   logOut: ctrlWrapper(logOut),
   uploadAvatar: ctrlWrapper(uploadAvatar),
- 
+  verify: ctrlWrapper(verify),
+  emailResend: ctrlWrapper(emailResend),
 };
