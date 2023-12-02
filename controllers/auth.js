@@ -2,18 +2,16 @@ const { User } = require("../models/user");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 require("dotenv").config();
-const { registerSchema, loginSchema } = require("../models/user");
+const { registerSchema, loginSchema, verifySchema } = require("../models/user");
 const fs = require("fs/promises");
 const path = require("path");
 const gravatar = require("gravatar");
 const Jimp = require("jimp");
 const sendEmail = require("../helpers/sendEmail");
-const { SECRET_KEY } = process.env;
+const { SECRET_KEY, BASE_URL } = process.env;
 
 const { ctrlWrapper } = require("../helpers");
 const { v4: uuidv4 } = require("uuid");
-
-// const avatarsDir = path.resolve('public/avatars');
 
 const register = async (req, res, next) => {
   const { password, email } = req.body;
@@ -42,7 +40,7 @@ const register = async (req, res, next) => {
     await sendEmail(
       email,
       "Email verification",
-      `<p>Click <a href="http://localhost:3000/users/verify/${verificationToken}">here</a> to verify your email.</p>`
+      `<p>Click <a href="${BASE_URL}/users/verify/${verificationToken}">here</a> to verify your email.</p>`
     );
     const newUser = await User.create({
       ...req.body,
@@ -180,6 +178,12 @@ const verify = async (req, res, next) => {
 
 const emailResend = async (req, res) => {
   const { email } = req.body;
+  const { error } = verifySchema.validate(req.body);
+
+  if (error) {
+    return res.status(400).json({ message: error.details[0].message });
+  }
+
 
   const user = User.findOne({ email });
 
